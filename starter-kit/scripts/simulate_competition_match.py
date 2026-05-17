@@ -136,6 +136,7 @@ def main() -> None:
     parser.add_argument("--seed-base", type=int, default=100, help="Starting RNG seed")
     parser.add_argument("--joker-pool-size", type=int, default=15, help="Official size is 15")
     parser.add_argument("--gui", action="store_true", help="Launch the GUI for each game in the simulation")
+    parser.add_argument("--random-seeds", action="store_true", help="Use completely random seeds instead of sequential ones")
     args = parser.parse_args()
 
     print("=" * 70)
@@ -158,7 +159,10 @@ def main() -> None:
     sum_scores_b = 0
 
     for round_idx in range(args.rounds):
-        seed = args.seed_base + round_idx
+        if args.random_seeds:
+            seed = random.randint(100000, 999999)
+        else:
+            seed = args.seed_base + round_idx
         rng = random.Random(seed)
 
         # Generate a distinct cards deal and joker pool

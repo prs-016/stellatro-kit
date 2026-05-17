@@ -124,11 +124,11 @@ def play_game_with_detailed_trace(
 
 
 def main() -> None:
-    seed = 104  # Seed for the final round (Set 5)
+    seed = 104  # Seed for Set 5
     rng = random.Random(seed)
 
     bot_a = "starter-kit/submission_folder/bot.py"
-    bot_b = "greedy"
+    bot_b = "starter-kit/bots/myfirstbot.py"
 
     setup = GameSetup.generate(rng=rng)
     setup.joker_pool = setup.joker_pool[:15]  # Cap pool to 15
