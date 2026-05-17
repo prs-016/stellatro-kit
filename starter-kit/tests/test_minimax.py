@@ -201,13 +201,13 @@ class TestMinimaxAgainstSimpleBot(unittest.TestCase):
     def test_minimax_can_play_full_games_against_random_bot(self):
         results = run_match_series(rounds=TEST_ROUNDS, seed_base=100)
         print(
-            "Minimax vs Random over {rounds} rounds: "
-            "minimax={minimax_wins}, random={random_wins}, ties={ties}".format(**results)
+            "Minimax vs Simple over {rounds} rounds: "
+            "minimax={minimax_wins}, simple={simple_wins}, ties={ties}".format(**results)
         )
 
         self.assertEqual(
             results["rounds"],
-            results["minimax_wins"] + results["random_wins"] + results["ties"],
+            results["minimax_wins"] + results["simple_wins"] + results["ties"],
         )
         self.assertGreater(results["minimax_wins"], 0)
 
@@ -262,5 +262,5 @@ if __name__ == "__main__":
     summary = run_match_series(rounds=TEST_ROUNDS, seed_base=100)
     print(
         "Minimax vs Random over {rounds} rounds: "
-        "minimax={minimax_wins}, random={random_wins}, ties={ties}".format(**summary)
+        "minimax={minimax_wins}, random={simple_wins}, ties={ties}".format(**summary)
     )
