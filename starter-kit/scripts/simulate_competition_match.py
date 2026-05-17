@@ -166,11 +166,17 @@ def main() -> None:
         # Cap the joker pool to the configured size
         setup.joker_pool = setup.joker_pool[:args.joker_pool_size]
 
-        print(f"\n[Set {round_idx + 1}/{args.rounds}] Seed={seed}...")
+        is_last_round = (round_idx == args.rounds - 1)
+        use_gui = args.gui and is_last_round
+
+        if use_gui:
+            print(f"\n📺 [Set {round_idx + 1}/{args.rounds}] Seed={seed} (SPECTATING IN GUI)...")
+        else:
+            print(f"\n⚡ [Set {round_idx + 1}/{args.rounds}] Seed={seed} (Simulating headlessly)...")
 
         # Variant 1: A goes first (P1), Hand 1 = A, Hand 2 = B
         # swap_hands = False
-        if args.gui:
+        if use_gui:
             score_p1_v1, score_p2_v1 = play_variant_gui(args.bot_a, args.bot_b, seed, swap_hands=False)
         else:
             score_p1_v1, score_p2_v1 = play_variant(bot_a, bot_b, setup, swap_hands=False)
@@ -178,7 +184,7 @@ def main() -> None:
 
         # Variant 2: B goes first (P1), Hand 1 = B, Hand 2 = A
         # swap_hands = False (B gets P1 hand, which is Hand 1. A gets P2 hand, which is Hand 2)
-        if args.gui:
+        if use_gui:
             score_p1_v2, score_p2_v2 = play_variant_gui(args.bot_b, args.bot_a, seed, swap_hands=False)
         else:
             score_p1_v2, score_p2_v2 = play_variant(bot_b, bot_a, setup, swap_hands=False)
@@ -186,7 +192,7 @@ def main() -> None:
 
         # Variant 3: A goes first (P1), Hand 1 = B, Hand 2 = A
         # swap_hands = True (Player 1 hand becomes Hand 2, which is A. Player 2 hand becomes Hand 1, which is B)
-        if args.gui:
+        if use_gui:
             score_p1_v3, score_p2_v3 = play_variant_gui(args.bot_a, args.bot_b, seed, swap_hands=True)
         else:
             score_p1_v3, score_p2_v3 = play_variant(bot_a, bot_b, setup, swap_hands=True)
@@ -194,7 +200,7 @@ def main() -> None:
 
         # Variant 4: B goes first (P1), Hand 1 = A, Hand 2 = B
         # swap_hands = True (Player 1 hand becomes Hand 2, which is B. Player 2 hand becomes Hand 1, which is A)
-        if args.gui:
+        if use_gui:
             score_p1_v4, score_p2_v4 = play_variant_gui(args.bot_b, args.bot_a, seed, swap_hands=True)
         else:
             score_p1_v4, score_p2_v4 = play_variant(bot_b, bot_a, setup, swap_hands=True)

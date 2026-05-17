@@ -1,26 +1,22 @@
 import math
 import time
 from copy import deepcopy
-from dataclasses import dataclass
 from itertools import combinations
-from typing import Iterable, List, Sequence
+from typing import List
 
 from stellatro_common import CardModel, GameState, JokerModel, PlayerTurn
 from stellatro_game import Card, JOKER_HAND_SIZE, Joker, PLAYER_CARDS, Suit, evaluate_hand
 from stellatro_game.jokers import ALL_JOKER_CLASSES, RegularJoker
 
 Hand = List[Card]
-JokerList = List[Joker]
 
 _JOKER_NAME_TO_CLASS = {joker_cls.name: joker_cls for joker_cls in ALL_JOKER_CLASSES}
-DEFAULT_DRAFT_SUBSET_LIMIT = 3
 
 
 def _card_from_model(card_model: CardModel) -> Card:
     suits = [Suit(suit) for suit in card_model.suits]
     if not suits:
         raise ValueError("CardModel must include at least one suit.")
-
     card = Card(card_model.rank, suits[0])
     for suit in suits[1:]:
         card.add_suit(suit)
@@ -29,9 +25,8 @@ def _card_from_model(card_model: CardModel) -> Card:
     return card
 
 
-def _joker_from_model(joker_model: JokerModel) -> Joker:
-    joker_cls = _JOKER_NAME_TO_CLASS.get(joker_model.name, RegularJoker)
-    return joker_cls()
+def _joker_cls_from_model(joker_model: JokerModel) -> type:
+    return _JOKER_NAME_TO_CLASS.get(joker_model.name, RegularJoker)
 
 
 def _hand_for_player(state: GameState, player_turn: PlayerTurn) -> Hand:
@@ -40,127 +35,142 @@ def _hand_for_player(state: GameState, player_turn: PlayerTurn) -> Hand:
     return [_card_from_model(card) for card in state.player2_hand]
 
 
-def _jokers_for_player(state: GameState, player_turn: PlayerTurn) -> JokerList:
+def _joker_classes_for_player(state: GameState, player_turn: PlayerTurn) -> List[type]:
     if player_turn == PlayerTurn.PLAYER1:
-        return [_joker_from_model(joker) for joker in state.player1_jokers]
-    return [_joker_from_model(joker) for joker in state.player2_jokers]
+        return [_joker_cls_from_model(joker) for joker in state.player1_jokers]
+    return [_joker_cls_from_model(joker) for joker in state.player2_jokers]
 
 
-def _normalize_play_indices(indices: Sequence[int], hand_size: int) -> List[int]:
-    playable_cards = min(PLAYER_CARDS, hand_size)
-    unique_in_range: List[int] = []
+def _get_diverse_candidates(cards: List[Card]) -> List[List[Card]]:
+    """Precompute the 12 most strategically diverse combinations in 1.2ms."""
+    n = min(PLAYER_CARDS, len(cards))
+    if n < 5:
+        return []
 
-    for index in indices:
-        if 0 <= index < playable_cards and index not in unique_in_range:
-            unique_in_range.append(index)
-        if len(unique_in_range) == 5:
-            return unique_in_range
+    scored_combos = []
+    for combo in combinations(range(n), 5):
+        subset = [cards[i] for i in combo]
+        copied_subset = [deepcopy(c) for c in subset]
+        try:
+            score = evaluate_hand(copied_subset, [])
+        except Exception:
+            score = 0
+        scored_combos.append((score, subset))
 
-    for index in range(playable_cards):
-        if index not in unique_in_range:
-            unique_in_range.append(index)
-        if len(unique_in_range) == 5:
+    scored_combos.sort(key=lambda x: x[0], reverse=True)
+
+    candidates = []
+    seen_indices = set()
+
+    def get_combo_key(subset):
+        return tuple(sorted((c.rank, tuple(sorted(s.value for s in c.suits))) for c in subset))
+
+    def is_flush(subset):
+        common_suits = set(subset[0].suits)
+        for c in subset[1:]:
+            common_suits &= set(c.suits)
+            if not common_suits:
+                return False
+        return True
+
+    def is_straight(subset):
+        ranks = sorted(c.rank for c in subset)
+        if len(set(ranks)) == 5 and ranks[-1] - ranks[0] == 4:
+            return True
+        if ranks == [2, 3, 4, 5, 14]:
+            return True
+        return False
+
+    # 1. Add top base score combos
+    for score, subset in scored_combos[:8]:
+        key = get_combo_key(subset)
+        if key not in seen_indices:
+            seen_indices.add(key)
+            candidates.append(subset)
+
+    # 2. Add Flushes and Straights to cover specific joker synergies
+    flushes_added = 0
+    straights_added = 0
+    for _, subset in scored_combos:
+        key = get_combo_key(subset)
+        if key in seen_indices:
+            continue
+
+        if is_flush(subset) and flushes_added < 2:
+            seen_indices.add(key)
+            candidates.append(subset)
+            flushes_added += 1
+
+        if is_straight(subset) and straights_added < 2:
+            seen_indices.add(key)
+            candidates.append(subset)
+            straights_added += 1
+
+        if len(candidates) >= 12:
             break
 
-    return unique_in_range[:5]
+    # 3. Fill up to 12 candidates
+    for _, subset in scored_combos:
+        if len(candidates) >= 12:
+            break
+        key = get_combo_key(subset)
+        if key not in seen_indices:
+            seen_indices.add(key)
+            candidates.append(subset)
+
+    return candidates
 
 
-def _all_5_card_subsets(hand: Sequence[Card]) -> Iterable[tuple[int, ...]]:
-    if len(hand) < 5:
-        return
-    yield from combinations(range(len(hand)), 5)
-
-
-def _iter_play_values(
-    hand: Sequence[Card], jokers: Sequence[Joker]
-) -> Iterable[tuple[tuple[int, ...], int]]:
-    for indices in _all_5_card_subsets(hand):
-        subset = [deepcopy(hand[index]) for index in indices]
+def _best_hand_from_candidates(candidates: List[List[Card]], joker_classes: List[type]) -> int:
+    """Return the best score across precomputed candidates in under 0.1ms."""
+    best_score = 0
+    for subset in candidates:
+        copied_subset = [deepcopy(c) for c in subset]
+        fresh_jokers = [cls() for cls in joker_classes]
         try:
-            yield indices, evaluate_hand(subset, deepcopy(list(jokers)))
+            score = evaluate_hand(copied_subset, fresh_jokers)
+        except Exception:
+            continue
+        if score > best_score:
+            best_score = score
+    return best_score
+
+
+def _best_hand_exact(cards: List[Card], joker_classes: List[type]) -> tuple[int, List[int]]:
+    """Brute force exact card play for play phase (only called once per turn)."""
+    best_score = -1
+    best_indices = list(range(5))
+    n = min(PLAYER_CARDS, len(cards))
+    if n < 5:
+        return 0, []
+
+    for combo in combinations(range(n), 5):
+        copied_subset = [deepcopy(cards[i]) for i in combo]
+        fresh_jokers = [cls() for cls in joker_classes]
+        try:
+            score = evaluate_hand(copied_subset, fresh_jokers)
         except Exception:
             continue
 
+        if score > best_score:
+            best_score = score
+            best_indices = list(combo)
 
-def _play_value_for_indices(
-    hand: Sequence[Card], jokers: Sequence[Joker], indices: Sequence[int]
-) -> int:
-    subset = [deepcopy(hand[index]) for index in indices]
-    try:
-        return evaluate_hand(subset, deepcopy(list(jokers)))
-    except Exception:
-        return 0
-
-
-def _candidate_play_subsets(
-    hand: Hand, jokers: JokerList, limit: int = DEFAULT_DRAFT_SUBSET_LIMIT
-) -> tuple[tuple[int, ...], ...]:
-    scored_subsets = sorted(
-        _iter_play_values(hand, jokers),
-        key=lambda item: item[1],
-        reverse=True,
-    )
-    if limit <= 0:
-        return tuple(indices for indices, _ in scored_subsets)
-    return tuple(indices for indices, _ in scored_subsets[:limit])
-
-
-def _approximate_best_play_value(
-    hand: Hand,
-    jokers: JokerList,
-    candidate_subsets: Sequence[tuple[int, ...]],
-) -> int:
-    if not candidate_subsets:
-        # exact search fallback if subset is not cached
-        best_value = -math.inf
-        for _, value in _iter_play_values(hand, jokers):
-            if value > best_value:
-                best_value = value
-        return 0 if best_value == -math.inf else int(best_value)
-    return max(_play_value_for_indices(hand, jokers, indices) for indices in candidate_subsets)
-
-
-def _best_play_indices(hand: Hand, jokers: JokerList) -> List[int]:
-    best_value = -math.inf
-    best_indices: tuple[int, ...] | None = None
-
-    for indices, value in _iter_play_values(hand, jokers):
-        if value > best_value:
-            best_value = value
-            best_indices = indices
-
-    if best_indices is None:
-        return []
-    return list(best_indices)
-
-
-@dataclass(frozen=True)
-class DraftState:
-    remaining: tuple[Joker, ...]
-    my_picks: tuple[Joker, ...]
-    opp_picks: tuple[Joker, ...]
-    my_turn: bool
+    return max(0, best_score), best_indices
 
 
 class Bot:
-    def __init__(
-        self,
-        max_depth: int = 3,
-        draft_subset_limit: int = DEFAULT_DRAFT_SUBSET_LIMIT,
-        time_limit: float = 0.065,  # 65 ms threshold to comply with 0.1s timeout
-    ) -> None:
-        self.max_depth = max_depth
-        self.draft_subset_limit = draft_subset_limit
+    def __init__(self, time_limit: float = 0.075) -> None:
         self.time_limit = time_limit
         self.search_start_time = 0.0
 
     def pick_joker(self, state: GameState) -> int:
         start_time = time.perf_counter()
+        self.search_start_time = start_time
         player_turn = state.current_turn
         if player_turn not in (PlayerTurn.PLAYER1, PlayerTurn.PLAYER2):
             return 0
 
-        # Reconstruct engine objects
         my_hand = _hand_for_player(state, player_turn)
         opp_turn = (
             PlayerTurn.PLAYER2
@@ -168,85 +178,56 @@ class Bot:
             else PlayerTurn.PLAYER1
         )
         opp_hand = _hand_for_player(state, opp_turn)
-        my_picks = tuple(_jokers_for_player(state, player_turn))
-        opp_picks = tuple(_jokers_for_player(state, opp_turn))
-        pool = tuple(_joker_from_model(joker) for joker in state.joker_pool)
 
-        # Precompute the top promising card play subsets to speed up search evaluations
-        my_candidate_subsets = _candidate_play_subsets(
-            my_hand, list(my_picks), self.draft_subset_limit
-        )
-        opp_candidate_subsets = _candidate_play_subsets(
-            opp_hand, list(opp_picks), self.draft_subset_limit
-        )
+        my_picks = _joker_classes_for_player(state, player_turn)
+        opp_picks = _joker_classes_for_player(state, opp_turn)
+        pool = [_joker_cls_from_model(joker) for joker in state.joker_pool]
 
-        # 1. Greedy Heuristic / Move Ordering
-        greedy_choices = []
-        for index, joker in enumerate(pool):
-            my_score = _approximate_best_play_value(
-                my_hand, list(my_picks) + [joker], my_candidate_subsets
-            )
-            opp_score = _approximate_best_play_value(
-                opp_hand, list(opp_picks) + [joker], opp_candidate_subsets
-            )
-            greedy_choices.append((index, joker, my_score, opp_score))
-
-        # Default fallback is the best immediate greedy choice (maximizing our own advantage)
-        best_index = 0
-        best_val = -math.inf
-        for index, _, my_score, opp_score in greedy_choices:
-            val = my_score - opp_score
-            if val > best_val:
-                best_val = val
-                best_index = index
-
-        if len(pool) <= 1:
+        if not pool:
+            return 0
+        if len(pool) == 1:
             return 0
 
-        self.search_start_time = start_time
+        # Precompute the top 12 diverse candidates for both hands
+        my_candidates = _get_diverse_candidates(my_hand)
+        opp_candidates = _get_diverse_candidates(opp_hand)
+
+        # 1. Exact Greedy Search with Deny weight
+        greedy_choices = []
+        opp_base = _best_hand_from_candidates(opp_candidates, opp_picks)
+        for index, joker_cls in enumerate(pool):
+            my_score = _best_hand_from_candidates(my_candidates, my_picks + [joker_cls])
+            opp_score = _best_hand_from_candidates(opp_candidates, opp_picks + [joker_cls])
+            opp_gain = max(0, opp_score - opp_base)
+            val = my_score + 0.35 * opp_gain
+            greedy_choices.append((index, val, joker_cls))
+
+        # Sort greedy choices best first
+        greedy_choices.sort(key=lambda x: x[1], reverse=True)
+        best_index = greedy_choices[0][0]
+
+        # If time is tight, return greedy choice immediately
+        if time.perf_counter() - start_time > self.time_limit:
+            return best_index
+
+        # 2. Pruned Minimax Search with Iterative Deepening
         best_idx_found = best_index
-
-        # 2. Iterative Deepening Minimax with Move Ordering and hard Timeout check
         try:
-            for target_depth in range(1, self.max_depth + 1):
-                best_value = -math.inf
-                best_index_for_depth = best_index
-
-                # Sort available jokers greedily (best for us first)
-                sorted_choices = sorted(
-                    greedy_choices,
-                    key=lambda x: (x[2], -x[3]),
-                    reverse=True,
+            for target_depth in (1, 2):
+                val, idx = self._minimax(
+                    my_candidates,
+                    opp_candidates,
+                    pool,
+                    my_picks,
+                    opp_picks,
+                    my_turn=True,
+                    depth=0,
+                    target_depth=target_depth,
+                    alpha=-math.inf,
+                    beta=math.inf,
                 )
-
-                for index, joker, _, _ in sorted_choices:
-                    if time.perf_counter() - start_time > self.time_limit:
-                        raise TimeoutError()
-
-                    next_state = DraftState(
-                        remaining=pool[:index] + pool[index + 1 :],
-                        my_picks=my_picks + (joker,),
-                        opp_picks=opp_picks,
-                        my_turn=False,
-                    )
-                    value = self._minimax(
-                        my_hand,
-                        opp_hand,
-                        next_state,
-                        -math.inf,
-                        math.inf,
-                        depth=1,
-                        target_depth=target_depth,
-                        my_candidate_subsets=my_candidate_subsets,
-                        opp_candidate_subsets=opp_candidate_subsets,
-                    )
-
-                    if value > best_value:
-                        best_value = value
-                        best_index_for_depth = index
-
-                # Complete iteration fully -> update choice
-                best_idx_found = best_index_for_depth
+                if idx is not None:
+                    best_idx_found = idx
         except TimeoutError:
             pass
 
@@ -255,144 +236,111 @@ class Bot:
     def pick_hand(self, state: GameState) -> List[int]:
         player_turn = state.current_turn or PlayerTurn.PLAYER1
         hand = _hand_for_player(state, player_turn)
-        jokers = _jokers_for_player(state, player_turn)
-        return _normalize_play_indices(_best_play_indices(hand, jokers), len(hand))
-
-    def _leaf_value(
-        self,
-        my_hand: Hand,
-        opp_hand: Hand,
-        state: DraftState,
-        my_candidate_subsets: Sequence[tuple[int, ...]],
-        opp_candidate_subsets: Sequence[tuple[int, ...]],
-    ) -> float:
-        my_best = _approximate_best_play_value(
-            my_hand, list(state.my_picks), my_candidate_subsets
-        )
-        opp_best = _approximate_best_play_value(
-            opp_hand, list(state.opp_picks), opp_candidate_subsets
-        )
-        return float(my_best - opp_best)
-
-    def _heuristic_value(
-        self,
-        my_hand: Hand,
-        opp_hand: Hand,
-        state: DraftState,
-        my_candidate_subsets: Sequence[tuple[int, ...]],
-        opp_candidate_subsets: Sequence[tuple[int, ...]],
-    ) -> float:
-        my_now = _approximate_best_play_value(
-            my_hand, list(state.my_picks), my_candidate_subsets
-        )
-        opp_now = _approximate_best_play_value(
-            opp_hand, list(state.opp_picks), opp_candidate_subsets
-        )
-        return float(my_now - opp_now)
+        joker_classes = _joker_classes_for_player(state, player_turn)
+        _, indices = _best_hand_exact(hand, joker_classes)
+        playable_cards = min(PLAYER_CARDS, len(hand))
+        unique_in_range = []
+        for idx in indices:
+            if 0 <= idx < playable_cards and idx not in unique_in_range:
+                unique_in_range.append(idx)
+        for idx in range(playable_cards):
+            if len(unique_in_range) == 5:
+                break
+            if idx not in unique_in_range:
+                unique_in_range.append(idx)
+        return unique_in_range[:5]
 
     def _minimax(
         self,
-        my_hand: Hand,
-        opp_hand: Hand,
-        state: DraftState,
-        alpha: float,
-        beta: float,
+        my_candidates: List[List[Card]],
+        opp_candidates: List[List[Card]],
+        pool: List[type],
+        my_picks: List[type],
+        opp_picks: List[type],
+        my_turn: bool,
         depth: int,
         target_depth: int,
-        my_candidate_subsets: Sequence[tuple[int, ...]],
-        opp_candidate_subsets: Sequence[tuple[int, ...]],
-    ) -> float:
+        alpha: float,
+        beta: float,
+    ) -> tuple[float, int | None]:
         if time.perf_counter() - self.search_start_time > self.time_limit:
             raise TimeoutError()
 
-        if (
-            len(state.my_picks) == JOKER_HAND_SIZE
-            and len(state.opp_picks) == JOKER_HAND_SIZE
-        ):
-            return self._leaf_value(
-                my_hand,
-                opp_hand,
-                state,
-                my_candidate_subsets,
-                opp_candidate_subsets,
-            )
+        if len(my_picks) == JOKER_HAND_SIZE and len(opp_picks) == JOKER_HAND_SIZE:
+            my_score = _best_hand_from_candidates(my_candidates, my_picks)
+            opp_score = _best_hand_from_candidates(opp_candidates, opp_picks)
+            return float(my_score - opp_score), None
 
-        if depth >= target_depth:
-            return self._heuristic_value(
-                my_hand,
-                opp_hand,
-                state,
-                my_candidate_subsets,
-                opp_candidate_subsets,
-            )
+        if depth >= target_depth or not pool:
+            my_score = _best_hand_from_candidates(my_candidates, my_picks)
+            opp_score = _best_hand_from_candidates(opp_candidates, opp_picks)
+            return float(my_score - opp_score), None
 
-        # Move Ordering inside search layers
+        K = 3
         candidates = []
-        for index, joker in enumerate(state.remaining):
-            if state.my_turn:
-                score = _approximate_best_play_value(
-                    my_hand, list(state.my_picks) + [joker], my_candidate_subsets
-                )
-                candidates.append((index, joker, score))
+        for index, joker_cls in enumerate(pool):
+            if my_turn:
+                score = _best_hand_from_candidates(my_candidates, my_picks + [joker_cls])
+                opp_score = _best_hand_from_candidates(opp_candidates, opp_picks + [joker_cls])
+                opp_base = _best_hand_from_candidates(opp_candidates, opp_picks)
+                opp_gain = max(0, opp_score - opp_base)
+                val = score + 0.35 * opp_gain
+                candidates.append((index, val, joker_cls))
             else:
-                score = _approximate_best_play_value(
-                    opp_hand, list(state.opp_picks) + [joker], opp_candidate_subsets
-                )
-                candidates.append((index, joker, score))
+                score = _best_hand_from_candidates(opp_candidates, opp_picks + [joker_cls])
+                my_score = _best_hand_from_candidates(my_candidates, my_picks + [joker_cls])
+                my_base = _best_hand_from_candidates(my_candidates, my_picks)
+                my_gain = max(0, my_score - my_base)
+                val = score + 0.35 * my_gain
+                candidates.append((index, val, joker_cls))
 
-        candidates.sort(key=lambda x: x[2], reverse=True)
+        candidates.sort(key=lambda x: x[1], reverse=True)
+        top_candidates = candidates[:K]
 
-        if state.my_turn:
-            best_value = -math.inf
-            for index, joker, _ in candidates:
-                next_state = DraftState(
-                    remaining=state.remaining[:index] + state.remaining[index + 1 :],
-                    my_picks=state.my_picks + (joker,),
-                    opp_picks=state.opp_picks,
+        best_idx = None
+        if my_turn:
+            best_val = -math.inf
+            for index, _, joker_cls in top_candidates:
+                next_pool = pool[:index] + pool[index + 1 :]
+                val, _ = self._minimax(
+                    my_candidates,
+                    opp_candidates,
+                    next_pool,
+                    my_picks + [joker_cls],
+                    opp_picks,
                     my_turn=False,
+                    depth=depth + 1,
+                    target_depth=target_depth,
+                    alpha=alpha,
+                    beta=beta,
                 )
-                value = self._minimax(
-                    my_hand,
-                    opp_hand,
-                    next_state,
-                    alpha,
-                    beta,
-                    depth + 1,
-                    target_depth,
-                    my_candidate_subsets,
-                    opp_candidate_subsets,
-                )
-                if value > best_value:
-                    best_value = value
-                if best_value > alpha:
-                    alpha = best_value
+                if val > best_val:
+                    best_val = val
+                    best_idx = index
+                alpha = max(alpha, best_val)
                 if alpha >= beta:
                     break
-            return best_value
-
-        best_value = math.inf
-        for index, joker, _ in candidates:
-            next_state = DraftState(
-                remaining=state.remaining[:index] + state.remaining[index + 1 :],
-                my_picks=state.my_picks,
-                opp_picks=state.opp_picks + (joker,),
-                my_turn=True,
-            )
-            value = self._minimax(
-                my_hand,
-                opp_hand,
-                next_state,
-                alpha,
-                beta,
-                depth + 1,
-                target_depth,
-                my_candidate_subsets,
-                opp_candidate_subsets,
-            )
-            if value < best_value:
-                best_value = value
-            if best_value < beta:
-                beta = best_value
-            if alpha >= beta:
-                break
-        return best_value
+            return best_val, best_idx
+        else:
+            best_val = math.inf
+            for index, _, joker_cls in top_candidates:
+                next_pool = pool[:index] + pool[index + 1 :]
+                val, _ = self._minimax(
+                    my_candidates,
+                    opp_candidates,
+                    next_pool,
+                    my_picks,
+                    opp_picks + [joker_cls],
+                    my_turn=True,
+                    depth=depth + 1,
+                    target_depth=target_depth,
+                    alpha=alpha,
+                    beta=beta,
+                )
+                if val < best_val:
+                    best_val = val
+                    best_idx = index
+                beta = min(beta, best_val)
+                if alpha >= beta:
+                    break
+            return best_val, best_idx
