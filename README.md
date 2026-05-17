@@ -121,7 +121,7 @@ choosing five card indices to play.
 
 | Bot | File | Description |
 | --- | --- | --- |
-| Random bot | `starter-kit/bots/random_bot.py` | Minimal baseline that always takes the first available joker and plays the first five cards. Useful as the simplest interface example. |
+| Simple bot | `starter-kit/bots/random_bot.py` | Minimal baseline (formerly `RandomBot`) that always takes the first available joker and plays the first five cards. Useful as the simplest interface example. |
 | Greedy bot | `starter-kit/bots/greedy_bot.py` | Tries each available joker, scores every 5-card hand with that joker, drafts the joker with the best immediate score, then plays the best-scoring hand. |
 | Minimax bot | `starter-kit/bots/minimax_bot.py` | Looks ahead through the joker draft with alpha-beta minimax, estimates future score advantage, and uses exhaustive search for the final 
 | Participant bot selector | `starter-kit/bots/participant_bot.py` | Small switchboard that points local starter-kit tools at whichever bot class you want to test. |

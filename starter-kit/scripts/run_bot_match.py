@@ -23,7 +23,7 @@ from stellatro_game import Game, Phase, PlayerTurn
 
 BOT_ALIASES = {
     "minimax": "bots.minimax_bot:MinimaxBot",
-    "random": "bots.random_bot:RandomBot",
+    "random": "bots.random_bot:SimpleBot",
     "greedy": "bots.greedy_bot:GreedyBot",
 }
 
@@ -195,7 +195,7 @@ def _run_game_job(job: dict[str, Any]) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run a local bot-vs-bot Stellatro match.")
     parser.add_argument("player1", nargs="?", help="Player 1 bot alias or import path like bots.minimax_bot:MinimaxBot")
-    parser.add_argument("player2", nargs="?", help="Player 2 bot alias or import path like bots.random_bot:RandomBot")
+    parser.add_argument("player2", nargs="?", help="Player 2 bot alias or import path like bots.random_bot:SimpleBot")
     parser.add_argument("--rounds", type=int, default=10, help="Number of games to run")
     parser.add_argument("--seed-base", type=int, default=100, help="Starting seed for the match series")
     parser.add_argument("--joker-pool-size", type=int, default=10, help="Number of jokers to keep in the draft pool")

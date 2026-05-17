@@ -282,7 +282,7 @@ PARTICIPANT_BOT = MyFirstBot
 
 ## Step 6: Run Your Bot
 
-Now test your bot against the built-in random bot:
+Now test your bot against the built-in simple bot (alias `random`):
 
 ```bash
 python starter-kit/scripts/run_bot_match.py bots.my_first_bot:MyFirstBot random --rounds 5

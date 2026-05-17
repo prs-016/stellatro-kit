@@ -5,7 +5,7 @@ from collections.abc import Callable
 from unittest.mock import patch
 
 from bots.minimax_bot import MinimaxBot
-from bots.random_bot import RandomBot
+from bots.random_bot import SimpleBot
 from stellatro_game import Game, JOKER_HAND_SIZE, Phase, PlayerTurn
 
 
@@ -23,7 +23,7 @@ def run_single_game(seed: int) -> tuple[int, int]:
     random.seed(seed)
     game = Game()
     minimax_bot = MinimaxBot()
-    random_bot = RandomBot()
+    simple_bot = SimpleBot()
     with patch("builtins.print"):
         game.start_round()
         game.jokers = game.jokers[:TEST_JOKER_POOL_SIZE]
@@ -37,10 +37,10 @@ def run_single_game(seed: int) -> tuple[int, int]:
                     raise AssertionError("Minimax draft move was rejected.")
                 continue
 
-            picked_index = random_bot.pick_joker(state)
+            picked_index = simple_bot.pick_joker(state)
             ok, _ = game.step(2, action=picked_index)
             if not ok:
-                raise AssertionError("Random bot draft move was rejected.")
+                raise AssertionError("Simple bot draft move was rejected.")
 
         if game.phase != Phase.PLAY:
             raise AssertionError("Game did not reach play phase.")
@@ -55,9 +55,9 @@ def run_single_game(seed: int) -> tuple[int, int]:
         if state.phase != Phase.PLAY or state.current_turn != PlayerTurn.PLAYER2:
             raise AssertionError("Game did not hand over to Player 2 for play.")
 
-        ok, final_state = game.step(2, hand_list=random_bot.pick_hand(state))
+        ok, final_state = game.step(2, hand_list=simple_bot.pick_hand(state))
         if not ok:
-            raise AssertionError("Random bot play move was rejected.")
+            raise AssertionError("Simple bot play move was rejected.")
 
     if final_state.phase != Phase.OVER:
         raise AssertionError("Game did not end after both players played.")
@@ -66,7 +66,7 @@ def run_single_game(seed: int) -> tuple[int, int]:
 
 
 def run_match_series(rounds: int = TEST_ROUNDS, seed_base: int = 0) -> dict[str, int]:
-    results = {"rounds": rounds, "minimax_wins": 0, "random_wins": 0, "ties": 0}
+    results = {"rounds": rounds, "minimax_wins": 0, "simple_wins": 0, "ties": 0}
 
     for round_number, seed in enumerate(range(seed_base, seed_base + rounds), start=1):
         print(f"[{round_number}/{rounds}] Running seed {seed}...")
@@ -75,8 +75,8 @@ def run_match_series(rounds: int = TEST_ROUNDS, seed_base: int = 0) -> dict[str,
             results["minimax_wins"] += 1
             outcome = "minimax"
         elif p2_score > p1_score:
-            results["random_wins"] += 1
-            outcome = "random"
+            results["simple_wins"] += 1
+            outcome = "simple"
         else:
             results["ties"] += 1
             outcome = "tie"
@@ -197,7 +197,7 @@ def run_minimax_mirror_game_with_timings(
     )
 
 
-class TestMinimaxAgainstRandomBot(unittest.TestCase):
+class TestMinimaxAgainstSimpleBot(unittest.TestCase):
     def test_minimax_can_play_full_games_against_random_bot(self):
         results = run_match_series(rounds=TEST_ROUNDS, seed_base=100)
         print(
