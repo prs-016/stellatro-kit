@@ -14,6 +14,7 @@ Then, during play, brute-force all C(10,5)=252 hand combos and play the best one
 from copy import deepcopy
 from itertools import combinations
 from typing import List
+import time
 
 from stellatro_common import GameState, PlayerTurn
 from stellatro_game import Card, Suit, evaluate_hand, PLAYER_CARDS
@@ -42,9 +43,9 @@ def _make_joker(joker_model):
     return _JOKER_NAME_TO_CLASS.get(joker_model.name, RegularJoker)()
 
 
-def _best_hand(cards: List[Card], jokers) -> tuple[int, List[int]]:
+def _best_hand(cards: List[Card], jokers) -> tuple[float, List[int]]:
     """Return (best_score, best_indices) across all C(n,5) combos."""
-    best_score = -1
+    best_score = -1.0
     best_indices = list(range(5))
     n = min(PLAYER_CARDS, len(cards))
 
@@ -66,6 +67,8 @@ def _best_hand(cards: List[Card], jokers) -> tuple[int, List[int]]:
 
 class SmartGreedyBot:
     def pick_joker(self, state: GameState) -> int:
+        start = time.perf_counter()
+
         is_p1 = state.current_turn == PlayerTurn.PLAYER1
 
         my_hand = _to_cards(state.player1_hand if is_p1 else state.player2_hand)
@@ -74,10 +77,10 @@ class SmartGreedyBot:
         opp_hand = _to_cards(state.player2_hand if is_p1 else state.player1_hand)
         opp_jokers = _to_jokers(state.player2_jokers if is_p1 else state.player1_jokers)
 
-        best_value = -1
+        best_value = -1.0
         best_idx = 0
 
-        # How much we care about blocking opponent's good jokers.
+        # Best value from testing.
         deny_weight = 0.35
 
         opp_base_score, _ = _best_hand(opp_hand, opp_jokers)
@@ -89,26 +92,42 @@ class SmartGreedyBot:
             my_score, _ = _best_hand(my_hand, my_jokers + [candidate])
 
             # Score if opponent had gotten this joker.
-            opp_score_with_candidate, _ = _best_hand(opp_hand, opp_jokers + [candidate])
-            opponent_gain = max(0, opp_score_with_candidate - opp_base_score)
+            opp_score_with_candidate, _ = _best_hand(
+                opp_hand,
+                opp_jokers + [candidate],
+            )
+            opponent_gain = max(0.0, opp_score_with_candidate - opp_base_score)
 
-            # Main idea:
-            # prioritize helping myself, but also steal jokers that help opponent a lot.
             value = my_score + deny_weight * opponent_gain
 
             if value > best_value:
                 best_value = value
                 best_idx = i
 
+        elapsed_ms = (time.perf_counter() - start) * 1000
+
+        if elapsed_ms > 200:
+            print(f"WARNING: myfirstbot pick_joker too slow: {elapsed_ms:.2f} ms")
+        else:
+            print(f"pick_joker latency myfirstbot: {elapsed_ms:.2f} ms")
+
         return best_idx
 
     def pick_hand(self, state: GameState) -> List[int]:
+        start = time.perf_counter()
+
         is_p1 = state.current_turn == PlayerTurn.PLAYER1
 
         my_hand = _to_cards(state.player1_hand if is_p1 else state.player2_hand)
         my_jokers = _to_jokers(state.player1_jokers if is_p1 else state.player2_jokers)
 
         _, indices = _best_hand(my_hand, my_jokers)
+
+        elapsed_ms = (time.perf_counter() - start) * 1000
+
+        if elapsed_ms > 200:
+            print(f"WARNING: myfirstbot pick_hand too slow: {elapsed_ms:.2f} ms")
+
         return indices
 
 
