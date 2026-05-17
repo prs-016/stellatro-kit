@@ -111,7 +111,13 @@ Stellatro is a two-player competitive card game inspired by Balatro, built for b
 
 For a more detailed explanation of the game, see `starter-kit/tutorial.md`.
 
-To find the comprehensive list of jokers, see `starter-kit/jokers.md`
+To find the comprehensive list of jokers, see `starter-kit/jokers.md`.
+
+### Stella
+
+Stella is a temporary counter on each played card. Every card starts each
+scoring attempt with 0 stella, then some jokers add or copy stella before the
+hand is scored. Other jokers reward stella by turning it into extra chips, multiplier, or retriggers. Stella only matters during the current hand evaluation. It is recalculated from the selected cards and drafted jokers each time the engine scores a hand.
 
 ### Starter Bots
 
@@ -123,10 +129,11 @@ choosing five card indices to play.
 | --- | --- | --- |
 | Simple bot | `starter-kit/bots/random_bot.py` | Minimal baseline (formerly `RandomBot`) that always takes the first available joker and plays the first five cards. Useful as the simplest interface example. |
 | Greedy bot | `starter-kit/bots/greedy_bot.py` | Tries each available joker, scores every 5-card hand with that joker, drafts the joker with the best immediate score, then plays the best-scoring hand. |
-| Minimax bot | `starter-kit/bots/minimax_bot.py` | Looks ahead through the joker draft with alpha-beta minimax, estimates future score advantage, and uses exhaustive search for the final 
-| Participant bot selector | `starter-kit/bots/participant_bot.py` | Small switchboard that points local starter-kit tools at whichever bot class you want to test. |
+| Minimax bot | `starter-kit/bots/minimax_bot.py` | Looks ahead through the joker draft with alpha-beta minimax, estimates future score advantage, and uses exhaustive search for the final. |
 | Bot interface | `starter-kit/bots/bot_interface.py` | Abstract interface documenting the required `pick_joker` and `pick_hand` methods. |
 | Bot utilities | `starter-kit/bots/utils.py` | Shared helpers for converting game state models, scoring candidate hands, and measuring possible joker improvements. |
+
+> If you want to try reinforcement learning approach, we have included PyTorch in the environment, but it might not be the best and stable to compete against other bots.
 
 ## Submission and Evaluation
 
@@ -138,14 +145,17 @@ You should submit a zip file containing your final `bot.py` to the portal: <http
 
 The competition will be in a round-robin format, which means each bot will play against each other once. The final ranking will be determined based on the total scores, where each win is +3, tie is +1, and loss is +0.
 
+> [!CAUTION]
+> You need to make each move of your bot run under 200 ms. If you exceed the time limit, you might lose the match. You can test it using `python starter-kit/scripts/benchmark_draft_call.py greedy --trials 20`
+
 You can check <https://ai.acmucsd.com/portal> for current leaderboard.
 **Please note that the submission portal will be closed at 5 pm.**
 
 Note the follow additional clauses for evaluation:
-1. We will run games in sets of four, swapping who goes first and who has which hand, to ensure evaluation fairness. 
+
+1. We will run games in sets of four, swapping who goes first and who has which hand, to ensure evaluation fairness.
 2. Each joker pool will have at least one joker that generates stella and one joker that uses stella. This is reflected in your starter kit game logic as well.
 3. For determining leaderboard winners, we will run an additional round robin evaluation with additional sets between the top eight submissions.
-
 
 ## Competition Rules
 
