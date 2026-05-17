@@ -201,7 +201,7 @@ class TestMinimaxAgainstSimpleBot(unittest.TestCase):
     def test_minimax_can_play_full_games_against_random_bot(self):
         results = run_match_series(rounds=TEST_ROUNDS, seed_base=100)
         print(
-            "Minimax vs Simple over {rounds} rounds: "
+            "Minimax vs Random over {rounds} rounds: "
             "minimax={minimax_wins}, simple={simple_wins}, ties={ties}".format(**results)
         )
 

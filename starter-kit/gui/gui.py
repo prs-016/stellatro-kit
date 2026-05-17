@@ -113,6 +113,9 @@ def main():
     parser.add_argument('--report', action='store_true', help="Whether to report game results to a CSV file.")
     parser.add_argument('--no_bg', action='store_true', help="Disable the dynamic flowing background.")
     parser.add_argument('--autorestart', action='store_true', help="Immediately restart the game after it ends.")
+    parser.add_argument('--seed', type=int, default=None, help="Specific RNG seed to play.")
+    parser.add_argument('--swap_hands', action='store_true', help="Swap the starting deals between Player 1 and Player 2.")
+    parser.add_argument('--score_file', type=str, default=None, help="File to write final P1 and P2 scores.")
     args = parser.parse_args()
 
     NAVY_BLUE = (255, 228, 196)  # Bisque fallback
@@ -189,9 +192,18 @@ def main():
                  print(f"Warning: Could not find sprite for logical index {idx}")
         return sprites_to_play
 
-    current_seed = random.randint(0, 2**31 - 1)
-    game = Game(rng=random.Random(current_seed))
-    game.start_round()
+    if args.seed is not None:
+        current_seed = args.seed
+        from stellatro_game import GameSetup
+        rng = random.Random(current_seed)
+        setup = GameSetup.generate(rng=rng)
+        setup.joker_pool = setup.joker_pool[:15]
+        game = Game(verbose=False)
+        game.load_setup(setup, swap_hands=args.swap_hands)
+    else:
+        current_seed = random.randint(0, 2**31 - 1)
+        game = Game(rng=random.Random(current_seed))
+        game.start_round()
 
     background = pygame.Surface(screen.get_size())
     background = background.convert()
@@ -329,36 +341,44 @@ def main():
         if game.phase == Phase.OVER:
             game_over_container.update(delta,game,mouse_pos,mouse_btns)
             
-            if args.report and not reported:
+            if not reported:
                 reported = True
                 game_state = game.get_game_state()
-
                 p1_score = game_state.player1_score
                 p2_score = game_state.player2_score
-                winner = "player1" if p1_score > p2_score else "player2" if p2_score > p1_score else "tie"
-                p1_jokers = ";".join(j.name for j in game_state.player1_jokers)
-                p2_jokers = ";".join(j.name for j in game_state.player2_jokers)
 
-                row = {
-                    "game": game_counter,
-                    "timestamp": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                    "player1_score": p1_score,
-                    "player2_score": p2_score,
-                    "winner": winner,
-                    "player1_jokers": p1_jokers,
-                    "player2_jokers": p2_jokers,
-                }
+                if args.report:
+                    winner = "player1" if p1_score > p2_score else "player2" if p2_score > p1_score else "tie"
+                    p1_jokers = ";".join(j.name for j in game_state.player1_jokers)
+                    p2_jokers = ";".join(j.name for j in game_state.player2_jokers)
 
-                try:
-                    os.makedirs(report_root_dir, exist_ok=True)
-                    write_header = not os.path.exists(report_file)
-                    with open(report_file, 'a', newline='') as f:
-                        writer = csv.DictWriter(f, fieldnames=row.keys())
-                        if write_header:
-                            writer.writeheader()
-                        writer.writerow(row)
-                except Exception as e:
-                    print(f"Error writing report file: {e}")
+                    row = {
+                        "game": game_counter,
+                        "timestamp": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                        "player1_score": p1_score,
+                        "player2_score": p2_score,
+                        "winner": winner,
+                        "player1_jokers": p1_jokers,
+                        "player2_jokers": p2_jokers,
+                    }
+
+                    try:
+                        os.makedirs(report_root_dir, exist_ok=True)
+                        write_header = not os.path.exists(report_file)
+                        with open(report_file, 'a', newline='') as f:
+                            writer = csv.DictWriter(f, fieldnames=row.keys())
+                            if write_header:
+                                writer.writeheader()
+                            writer.writerow(row)
+                    except Exception as e:
+                        print(f"Error writing report file: {e}")
+
+                if args.score_file:
+                    try:
+                        with open(args.score_file, 'w') as f:
+                            f.write(f"{p1_score},{p2_score}")
+                    except Exception as e:
+                        print(f"Error writing score file: {e}")
             
             if args.autorestart:
                 # Add a small delay or check to ensure the user sees the final score?
