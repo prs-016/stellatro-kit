@@ -1,0 +1,107 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Stellatro Joker Reference</title>
+  <style>
+    @page { size: letter landscape; margin: 0.35in; }
+    body { font-family: Arial, sans-serif; font-size: 9px; color: #171717; }
+    h1 { font-size: 24px; margin: 0 0 8px; }
+    h2 { font-size: 14px; margin: 14px 0 6px; }
+    p, li { font-size: 10px; line-height: 1.35; }
+    code { font-family: Consolas, monospace; background: #f2f2f2; padding: 1px 3px; border-radius: 3px; }
+    table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+    th, td { border: 1px solid #d0d0d0; padding: 4px 5px; vertical-align: middle; }
+    th { background: #eeeeee; font-size: 9px; text-align: left; }
+    td.image { width: 54px; text-align: center; }
+    td.name { width: 118px; font-weight: 700; }
+    td.phase { width: 120px; }
+    img { width: 42px; height: auto; }
+    tr { break-inside: avoid; page-break-inside: avoid; }
+    .note { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Joker Reference</h1>
+  <p class="note">Generated from <code>stellatro-game/stellatro_game/jokers.py</code> and the GUI joker image mapping.</p>
+  <h2>Phase Meanings</h2>
+  <ul>
+    <li><code>pre_card_phase</code>: changes or retriggers cards before they are scored.</li>
+    <li><code>apply_card_phase</code>: applies while each scored card is being processed.</li>
+    <li><code>post_card_phase</code>: applies after hand evaluation and card scoring.</li>
+    <li><code>none</code>: no custom phase hook.</li>
+  </ul>
+  <h2>All Implemented Jokers</h2>
+  <table>
+    <thead><tr><th>Image</th><th>Name</th><th>Description</th><th>Phase</th></tr></thead>
+    <tbody>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Regular%20Joker.png" width="65" alt="Regular Joker"></td><td class="name">Regular Joker</td><td>No special abilities.</td><td class="phase">`none`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Jolly%20Joker.png" width="65" alt="Jolly Joker"></td><td class="name">Jolly Joker</td><td>+3 Mult if the full played hand includes a Pair.</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Sly%20Joker.png" width="65" alt="Sly Joker"></td><td class="name">Sly Joker</td><td>+10 Chips if the full played hand includes a Pair.</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Zany%20Joker.png" width="65" alt="Zany Joker"></td><td class="name">Zany Joker</td><td>+5 Mult if the full played hand includes Three of a Kind.</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Cheeky%20Joker.png" width="65" alt="Cheeky Joker"></td><td class="name">Cheeky Joker</td><td>+4 Mult if the full played hand includes Two Pair.</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Witty%20Joker.png" width="65" alt="Witty Joker"></td><td class="name">Witty Joker</td><td>+6 Mult if the full played hand includes a Straight.</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Daring%20Joker.png" width="65" alt="Daring Joker"></td><td class="name">Daring Joker</td><td>+7 Mult if the full played hand includes a Flush.</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Merry%20Joker.png" width="65" alt="Merry Joker"></td><td class="name">Merry Joker</td><td>+15 Chips if the full played hand includes Three of a Kind.</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Jovial%20Joker.png" width="65" alt="Jovial Joker"></td><td class="name">Jovial Joker</td><td>+12 Chips if the full played hand includes Two Pair.</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Lively%20Joker.png" width="65" alt="Lively Joker"></td><td class="name">Lively Joker</td><td>+20 Chips if the full played hand includes a Straight.</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Vibrant%20Joker.png" width="65" alt="Vibrant Joker"></td><td class="name">Vibrant Joker</td><td>+25 Chips if the full played hand includes a Flush.</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Diamond%20Joker.png" width="65" alt="Diamond Joker"></td><td class="name">Diamond Joker</td><td>Scored cards with Diamond suit give +2 Mult.</td><td class="phase">`apply_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Heart%20Joker.png" width="65" alt="Heart Joker"></td><td class="name">Heart Joker</td><td>Scored cards with Heart suit give +2 Mult.</td><td class="phase">`apply_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Club%20Joker.png" width="65" alt="Club Joker"></td><td class="name">Club Joker</td><td>Scored cards with Club suit give +2 Mult.</td><td class="phase">`apply_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Spade%20Joker.png" width="65" alt="Spade Joker"></td><td class="name">Spade Joker</td><td>Scored cards with Spade suit give +2 Mult.</td><td class="phase">`apply_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Walkie%20Talkie%20Joker.png" width="65" alt="Walkie Talkie"></td><td class="name">Walkie Talkie</td><td>Each scored 10 or 4 gives +10 Chips and +4 Mult when scored.</td><td class="phase">`apply_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Sock%20and%20Buskin%20Joker.png" width="65" alt="Sock and Buskin"></td><td class="name">Sock and Buskin</td><td>Retrigger all scored face cards.</td><td class="phase">`pre_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Sun%20God%20Joker.png" width="65" alt="Sun God"></td><td class="name">Sun God</td><td>For every heart card scored, get X1.5 Mult</td><td class="phase">`apply_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Eight%20College%20Joker.png" width="65" alt="Eigth College"></td><td class="name">Eigth College</td><td>Each scored 8 gives +80 chips and +8 Mult when scored</td><td class="phase">`apply_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Photograph%20Joker.png" width="65" alt="PhotoGraph Joker"></td><td class="name">PhotoGraph Joker</td><td>First scored face card gives X2 Mult when scored</td><td class="phase">`pre_card_phase`, `apply_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Flower%20Pot%20Joker.png" width="65" alt="Flower Pot"></td><td class="name">Flower Pot</td><td>x2.5 Mult if the full played hand contains a diamond, heart, spade, and club</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/The%20Duo%20Joker.png" width="65" alt="The Duo"></td><td class="name">The Duo</td><td>If the full played hand contains a pair, x2 Mult</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/The%20Trio%20Joker.png" width="65" alt="The Trio"></td><td class="name">The Trio</td><td>If the full played hand contains a Three of a Kind, x2.5 Mult</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/The%20Family%20Joker.png" width="65" alt="The Family"></td><td class="name">The Family</td><td>If the full played hand contains a Four of a Kind, x4 Mult</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/The%20Tribe%20Joker.png" width="65" alt="The Tribe"></td><td class="name">The Tribe</td><td>If the full played hand contains a Flush, x3 Mult</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/The%20Order%20Joker.png" width="65" alt="The Order"></td><td class="name">The Order</td><td>If the full played hand contains a Straight, x3 Mult</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/UC%20Socially%20Dead%20Joker.png" width="65" alt="UC Socially Dead"></td><td class="name">UC Socially Dead</td><td>If the full played hand contains only a High Card, x5 Mult</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Bit%20Byte%20Joker.png" width="65" alt="Bit Byte"></td><td class="name">Bit Byte</td><td>Face cards give +2 Mult, number cards give +8 Chips.</td><td class="phase">`apply_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Student%20ID%20Joker.png" width="65" alt="Student ID"></td><td class="name">Student ID</td><td>If the full played hand contains a single ace and no face cards, +120 Mult</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Seltzer%20Joker.png" width="65" alt="Seltzer"></td><td class="name">Seltzer</td><td>Retrigger each played card that has rank <= 8</td><td class="phase">`pre_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Last%20Lecture%20Joker.png" width="65" alt="Last Lecture"></td><td class="name">Last Lecture</td><td>Final played card gets retriggered 2 extra times</td><td class="phase">`pre_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Dining%20Hall%20Prices%20Joker.png" width="65" alt="Dining Hall Prices"></td><td class="name">Dining Hall Prices</td><td>Increases played cards with rank 2,3,4,5 by 5</td><td class="phase">`pre_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Half%20Joker.png" width="65" alt="Half Joker"></td><td class="name">Half Joker</td><td>+15 Mult if scored hand is either all <= 8, or >= 9</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Fibonacci%20Joker.png" width="65" alt="Fibonacci Joker"></td><td class="name">Fibonacci Joker</td><td>Each played Ace, 2, 3, 5, or 8 gives +5 Mult when scored.</td><td class="phase">`apply_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Scary%20Face%20Joker.png" width="65" alt="Scary Face Joker"></td><td class="name">Scary Face Joker</td><td>Each face card gives +30 chips.</td><td class="phase">`apply_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/mirror_joker.png" width="65" alt="Mirror"></td><td class="name">Mirror</td><td>Face Cards give +50 mult, but no chips</td><td class="phase">`apply_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/plasma_joker.png" width="65" alt="Plasma"></td><td class="name">Plasma</td><td>Balance chips and mult, diminished return if chips and mult are far apart</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Star_Plasma.png" width="65" alt="Star Plasma"></td><td class="name">Star Plasma</td><td>Gain 2x stellas in each played card</td><td class="phase">`pre_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/jam_session_joker.png" width="65" alt="Jam Session"></td><td class="name">Jam Session</td><td>+6 mult for each extra trigger on scored cards.</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/spotlight_joker.png" width="65" alt="Spotlight"></td><td class="name">Spotlight</td><td>First played face card gains +10 Chips and +4 Mult for each other face card in full played hand.</td><td class="phase">`pre_card_phase`, `apply_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/color_theory_joker.png" width="65" alt="Color Theory"></td><td class="name">Color Theory</td><td>x1.5 Mult for each additional suit represented in played hand.</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/study_group_joker.png" width="65" alt="Study Group"></td><td class="name">Study Group</td><td>+12 Chips for each distinct rank among scored cards.</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/group_project_joker.png" width="65" alt="Group Project"></td><td class="name">Group Project</td><td>+8 Chips and +2 Mult for each scored card with rank 8 or lower.</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/encore_joker.png" width="65" alt="Encore"></td><td class="name">Encore</td><td>Final card gets retriggered once for each other card sharing its suit.</td><td class="phase">`pre_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/WishUponAStar.png" width="65" alt="Wish Upon a Star"></td><td class="name">Wish Upon a Star</td><td>Lowest-ranked played card gains 8 Stella before scoring.</td><td class="phase">`pre_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/binary_star_joker.png" width="65" alt="Binary Star"></td><td class="name">Binary Star</td><td>Even played cards gain 2 stella</td><td class="phase">`pre_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/pips_joker.png" width="65" alt="Pips"></td><td class="name">Pips</td><td>Played cards gain stella equal to their rank, but give no chips when scored.</td><td class="phase">`pre_card_phase`, `apply_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/report_card_joker.png" width="65" alt="Report Card"></td><td class="name">Report Card</td><td>Each ace gives the first card in full played hand 11 stella</td><td class="phase">`pre_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Cache%20Coherence%20Joker.png" width="65" alt="Cache Coherence"></td><td class="name">Cache Coherence</td><td>Played cards of the same suit have the same number of stella (max)</td><td class="phase">`pre_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Stargazing%20Joker.png" width="65" alt="Stargazing"></td><td class="name">Stargazing</td><td>Each played card's stella gives one retrigger</td><td class="phase">`pre_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Boiling%20Point%20Joker.png" width="65" alt="Boiling Point"></td><td class="name">Boiling Point</td><td>If total number of stella across played cards is greater than 12, x3 Mult</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Galaxy%20Joker.png" width="65" alt="Galaxy"></td><td class="name">Galaxy</td><td>+0.5x Mult per stella across played cards, base 1x Mult</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Popcorn%20Joker.png" width="65" alt="Popcorn"></td><td class="name">Popcorn</td><td>+16 Mult, -1 per stella on played cards</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Starcorn.png" width="65" alt="Starcorn"></td><td class="name">Starcorn</td><td>Each card gives (rank * stella) mult</td><td class="phase">`apply_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Supernova.png" width="65" alt="Supernova"></td><td class="name">Supernova</td><td>Each card with stella gives x(1.1)^stella mult when scored.</td><td class="phase">`apply_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Snowball.png" width="65" alt="Snowball"></td><td class="name">Snowball</td><td>+40 Chips per stella on played cards</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Constellation%20Joker.png" width="65" alt="Constellation"></td><td class="name">Constellation</td><td>Gain +8 chips and +3 mult for each Stella on scored cards.</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Arrowhead.png" width="65" alt="Arrowhead"></td><td class="name">Arrowhead</td><td>Played cards with Spade suit give +18 Chips.</td><td class="phase">`apply_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Loss_Cut.png" width="65" alt="Loss Cut"></td><td class="name">Loss Cut</td><td>For every card that wasn't scored, gain +30 Chips.</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Starjack.png" width="65" alt="Starjack"></td><td class="name">Starjack</td><td>The first face card gains 10 stella.</td><td class="phase">`pre_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Blackjack.png" width="65" alt="Blackjack"></td><td class="name">Blackjack</td><td>x4 Mult if all played cards' score adds up to 21.</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/SixSeven.png" width="65" alt="Six Seven"></td><td class="name">Six Seven</td><td>If the full played hand contains two cards with 6 and 7 stella, gain +67 Mult</td><td class="phase">`post_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/ThriceTwice.png" width="65" alt="Thrice Twice"></td><td class="name">Thrice Twice</td><td>If the full played hand contains a Full House, each card gains 3 stella</td><td class="phase">`pre_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Fallen%20Star.png" width="65" alt="Fallen Star"></td><td class="name">Fallen Star</td><td>Lowest scored card gains stella equal to the highest scored rank, and highest scored card gains stella equal to the lowest scored rank.</td><td class="phase">`pre_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Star%20Fish.png" width="65" alt="Star Fish"></td><td class="name">Star Fish</td><td>Scored cards in pairs gain +2 stella, triplets gain +4 stella, and quads gain +8 stella.</td><td class="phase">`pre_card_phase`</td></tr>
+      <tr><td class="image"><img src="assets/stellatro_jokers/Branch_Out.png" width="65" alt="Branch Out"></td><td class="name">Branch Out</td><td>Each played card carries half of the previous played card's stella.</td><td class="phase">`pre_card_phase`</td></tr>
+    </tbody>
+  </table>
+</body>
+</html>

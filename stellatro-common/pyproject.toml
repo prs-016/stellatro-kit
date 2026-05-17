@@ -1,0 +1,10 @@
+[build-system]
+requires = ["setuptools>=42"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stellatro-common"
+version = "0.1.0"
+description = "Shared Stellatro models and enums."
+requires-python = ">=3.13"
+dependencies = ["pydantic>=2.0"]

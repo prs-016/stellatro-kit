@@ -1,0 +1,6 @@
+flask
+requests
+pydantic>=2.0
+-e ../stellatro-common
+-e ../stellatro-game
+torch

@@ -1,0 +1,18 @@
+[project]
+name = "starter-kit"
+version = "0.1.0"
+description = "Starter kit for Stellatro bots, GUI experiments, and local tests."
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "chz>=0.4.0",
+    "numpy",
+    "pygame>=2.6.1",
+    "stellatro-common",
+    "stellatro-game",
+    "tensordict",
+    "torch>=2.10.0",
+    "torchrl",
+]
+
+[tool.pytest.ini_options]
+addopts = "-p no:cacheprovider"
